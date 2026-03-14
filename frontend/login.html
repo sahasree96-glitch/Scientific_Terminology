@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css"> <!-- or paste your signup CSS here -->
+</head>
+
+<body>
+    <h1>🔒 Login</h1>
+    <form id="loginForm" class="form-box">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <div class="checkbox">
+            <input type="checkbox" id="showPassword">
+            <label for="showPassword">Show Password</label>
+        </div>
+        <button type="submit" class="main-btn">Login</button>
+    </form>
+
+    <script>
+        // Show password toggle
+        document.getElementById("showPassword").addEventListener("change", function () {
+            const passwordInput = document.getElementById("password");
+            passwordInput.type = this.checked ? "text" : "password";
+        });
+
+        // Login request
+        document.getElementById("loginForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch("http://localhost:5000/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+                window.location.href = "search.html";
+            } else {
+                alert("Login failed");
+            }
+        });
+    </script>
+</body>
+
+</html>

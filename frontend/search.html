@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Scientific Portal</title>
+    <link rel="stylesheet" href="style.css"> <!-- reuse your signup/login CSS -->
+    <style>
+        .search-box {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 40px 14px 14px;
+            /* space for mic */
+            border-radius: 10px;
+            border: 2px solid #0f52ba;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #00ffff;
+        }
+
+        .mic-btn {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #0f52ba;
+            transition: 0.3s ease;
+            padding: 0;
+        }
+
+        .mic-btn:hover {
+            color: #00ffff;
+        }
+
+        .search-btn {
+            display: block;
+            margin: 20px auto 0;
+            width: 200px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            background: #0f52ba;
+            color: #fff;
+            transition: 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: #00ffff;
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            text-align: left;
+            font-size: 18px;
+            color: #00ffff;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .result-box h3 {
+            margin-bottom: 10px;
+            color: #00ffff;
+            text-align: center;
+            font-size: 20px;
+            text-shadow: 0 0 8px #0f52ba;
+        }
+
+        .result-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .result-box li {
+            margin: 8px 0;
+            font-size: 18px;
+        }
+
+        .result-box li::before {
+            content: "✨ ";
+            /* fun bullet symbol */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔬 Scientific Portal</h1>
+    <h2>Ask Anything</h2>
+    <form id="queryForm" class="form-box">
+        <div class="search-box">
+            <input type="text" id="query" placeholder="Type or speak your question..." required>
+            <span id="micBtn" class="mic-btn">🎙️</span>
+        </div>
+        <button type="submit" class="search-btn">Search</button>
+    </form>
+
+    <div id="loading" style="display:none; margin-top:20px; font-size:18px; color:#0f52ba; text-align:center;">
+        ⏳ Thinking…
+    </div>
+
+    <div id="response" class="result-box">
+        <h3>🌟 Here’s what I found for you:</h3>
+    </div>
+
+    <script>
+        // Voice input
+        const micBtn = document.getElementById("micBtn");
+        const queryInput = document.getElementById("query");
+        let recognition;
+        if ("webkitSpeechRecognition" in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.lang = "en-US";
+            micBtn.addEventListener("click", () => recognition.start());
+            recognition.onresult = (event) => {
+                queryInput.value = event.results[0][0].transcript;
+            };
+        } else {
+            micBtn.style.display = "none";
+        }
+
+        // Query submission
+        document.getElementById("queryForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const query = queryInput.value;
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                alert("You must log in first!");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const loadingDiv = document.getElementById("loading");
+            const responseDiv = document.getElementById("response");
+
+            // Show spinner
+            loadingDiv.style.display = "block";
+            responseDiv.innerHTML = "";
+
+            try {
+                const response = await fetch("http://localhost:5000/query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token, query })
+                });
+
+                const data = await response.json();
+                console.log("Backend response:", data);
+
+                const answer = data.answer || data.error || "⚠️ No explanation returned.";
+
+                responseDiv.innerHTML = `
+      <h3>🌟 Quick & Clear:</h3>
+      <p>${answer}</p>
+    `;
+            } catch (err) {
+                console.error("Frontend error:", err);
+                responseDiv.innerHTML = `
+      <h3>🌟 Quick & Clear:</h3>
+      <p>⚠️ Error connecting to backend: ${err.message}</p>
+    `;
+            } finally {
+                // Hide spinner
+                loadingDiv.style.display = "none";
+            }
+        });
+        // =======================
+        // Load last query on page load
+        // =======================
+        window.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem("token");
+            if (!token) return; // only if user is logged in
+
+            try {
+                const response = await fetch("http://localhost:5000/last-query", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data && data.response) {
+                    const responseDiv = document.getElementById("response");
+                    responseDiv.innerHTML = `
+                    <h3>🌟 Last Explanation:</h3>
+                    <p>${data.response}</p>
+                `;
+                }
+            } catch (err) {
+                console.error("Error fetching last query:", err);
+            }
+        });
+    </script>
+</body>
+
+</html>

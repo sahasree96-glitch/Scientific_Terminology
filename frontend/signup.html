@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <h1>Create Account</h1>
+    <form id="signupForm" class="form-box">
+        <input type="text" name="username" placeholder="Username" required><br>
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" id="password" placeholder="Password" required><br>
+
+        <!-- Show Password -->
+        <label>
+            <input type="checkbox" id="showPass"> Show Password
+        </label><br>
+
+        <!-- Buttons -->
+        <button type="submit" class="main-btn">Sign Up</button>
+        <button type="button" id="suggestBtn" class="secondary-btn">Suggest Password</button>
+    </form>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
